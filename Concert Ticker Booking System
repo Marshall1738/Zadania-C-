@@ -1,1 +1,141 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
+// Interfejs dla koncertów
+public interface IConcert
+{
+    string Name { get; }
+    DateTime Date { get; }
+    string Location { get; }
+    int AvailableSeats { get; set; }
+}
+
+// Klasa reprezentująca koncert
+public class Concert : IConcert
+{
+    public string Name { get; private set; }
+    public DateTime Date { get; private set; }
+    public string Location { get; private set; }
+    public int AvailableSeats { get; set; }
+
+    public Concert(string name, DateTime date, string location, int availableSeats)
+    {
+        Name = name;
+        Date = date;
+        Location = location;
+        AvailableSeats = availableSeats;
+    }
+}
+
+// Klasa reprezentująca bilet
+public class Ticket
+{
+    public Concert Concert { get; private set; }
+    public decimal Price { get; private set; }
+    public int SeatNumber { get; private set; }
+
+    public Ticket(Concert concert, decimal price, int seatNumber)
+    {
+        Concert = concert;
+        Price = price;
+        SeatNumber = seatNumber;
+    }
+}
+
+// Klasa systemu rezerwacji biletów
+public class BookingSystem
+{
+    private List<Concert> concerts = new List<Concert>();
+    private List<Ticket> bookedTickets = new List<Ticket>();
+
+    // Metoda dodająca nowy koncert
+    public void AddConcert(Concert concert)
+    {
+        concerts.Add(concert);
+        Console.WriteLine($"Dodano koncert: {concert.Name}");
+    }
+
+    // Metoda rezerwująca bilet
+    public Ticket BookTicket(Concert concert, decimal price, int seatNumber)
+    {
+        if (concert.AvailableSeats > 0)
+        {
+            concert.AvailableSeats--;
+            Ticket ticket = new Ticket(concert, price, seatNumber);
+            bookedTickets.Add(ticket);
+            Console.WriteLine($"Zarezerwowano bilet na koncert: {concert.Name}, miejsce: {seatNumber}");
+            return ticket;
+        }
+        else
+        {
+            Console.WriteLine("Brak dostępnych miejsc na ten koncert.");
+            return null; // Zwracamy null, jeśli nie ma dostępnych miejsc
+        }
+    }
+
+    // Metoda wyświetlająca koncerty
+    public void ShowConcerts(string filterType, string filterValue)
+    {
+        IEnumerable<Concert> filteredConcerts = concerts;
+
+        switch (filterType.ToLower())
+        {
+            case "date":
+                if (DateTime.TryParse(filterValue, out DateTime date))
+                {
+                    filteredConcerts = concerts.Where(c => c.Date.Date == date.Date);
+                }
+                break;
+
+            case "location":
+                filteredConcerts = concerts.Where(c => c.Location.Equals(filterValue, StringComparison.OrdinalIgnoreCase));
+                break;
+        }
+
+        Console.WriteLine("Dostępne koncerty:");
+        foreach (var concert in filteredConcerts)
+        {
+            Console.WriteLine($"Nazwa: {concert.Name}, Data: {concert.Date}, Miejsce: {concert.Location}, Wolne miejsca: {concert.AvailableSeats}");
+        }
+    }
+
+    // Metoda generująca raport
+    public void GenerateReport()
+    {
+        Console.WriteLine("Raport sprzedanych biletów:");
+        foreach (var ticket in bookedTickets)
+        {
+            Console.WriteLine($"Koncert: {ticket.Concert.Name}, Miejsce: {ticket.SeatNumber}, Cena: {ticket.Price}");
+        }
+        Console.WriteLine($"Liczba sprzedanych biletów: {bookedTickets.Count}");
+    }
+}
+
+// Klasa główna z metodą Main
+class Program
+{
+    static void Main(string[] args)
+    {
+        BookingSystem bookingSystem = new BookingSystem();
+
+        // Dodawanie koncertów
+        bookingSystem.AddConcert(new Concert("Koncert A", new DateTime(2024, 05, 10), "Warszawa", 100));
+        bookingSystem.AddConcert(new Concert("Koncert B", new DateTime(2024, 05, 15), "Kraków", 50));
+        bookingSystem.AddConcert(new Concert("Koncert C", new DateTime(2024, 06, 01), "Poznań", 30));
+
+        // Przeglądanie koncertów
+        bookingSystem.ShowConcerts("date", "2024-05-10");
+        bookingSystem.ShowConcerts("location", "Kraków");
+
+        // Rezerwacja biletów
+        var concertA = new Concert("Koncert A", new DateTime(2024, 05, 10), "Warszawa", 100);
+        bookingSystem.BookTicket(concertA, 99.99m, 1);
+
+        var concertB = new Concert("Koncert B", new DateTime(2024, 05, 15), "Kraków", 50);
+        bookingSystem.BookTicket(concertB, 89.99m, 2);
+
+        // Generowanie raportu
+        bookingSystem.GenerateReport();
+    }
+}
